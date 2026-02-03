@@ -26,7 +26,7 @@ In your new repository, go to **Settings** → **Secrets and variables** → **A
 
 **Add a Variable:**
 - Go to the **Variables** tab
-- Name: `GITHUB_USERNAME`
+- Name: `GH_USERNAME`
 - Value: Your GitHub username
 
 ### 4. Initialize the data file
