@@ -36,7 +36,13 @@ jobs:
           STARRED_REPOS=$(curl -s -H "Authorization: token $GH_TOKEN" \
             -H "Accept: application/vnd.github.v3.star+json" \
             "https://api.github.com/users/$GH_USERNAME/starred?per_page=100&sort=created&direction=desc")
-          
+
+          # Validate API response is an array
+          if ! echo "$STARRED_REPOS" | jq -e 'type=="array"' > /dev/null; then
+            echo "Failed to fetch starred repositories. Response: $STARRED_REPOS"
+            exit 1
+          fi
+
           # Process each starred repo
           echo "$STARRED_REPOS" | jq -c '.[]' | while read -r repo; do
             REPO_NAME=$(echo "$repo" | jq -r '.full_name')
