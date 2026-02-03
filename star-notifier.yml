@@ -39,13 +39,12 @@ jobs:
           
           # Process each starred repo
           echo "$STARRED_REPOS" | jq -c '.[]' | while read -r repo; do
-            REPO_NAME=$(echo "$repo" | jq -r '.repo.full_name')
-            REPO_URL=$(echo "$repo" | jq -r '.repo.html_url')
-            REPO_DESC=$(echo "$repo" | jq -r '.repo.description // "No description provided"')
-            REPO_LANG=$(echo "$repo" | jq -r '.repo.language // "Not specified"')
-            REPO_STARS=$(echo "$repo" | jq -r '.repo.stargazers_count')
-            STARRED_AT=$(echo "$repo" | jq -r '.starred_at')
-            OWNER_AVATAR=$(echo "$repo" | jq -r '.repo.owner.avatar_url')
+            REPO_NAME=$(echo "$repo" | jq -r '.full_name')
+            REPO_URL=$(echo "$repo" | jq -r '.html_url')
+            REPO_DESC=$(echo "$repo" | jq -r '.description // "No description provided"')
+            REPO_LANG=$(echo "$repo" | jq -r '.language // "Not specified"')
+            REPO_STARS=$(echo "$repo" | jq -r '.stargazers_count')
+            OWNER_AVATAR=$(echo "$repo" | jq -r '.owner.avatar_url')
             
             # Check if we've already notified about this repo
             if grep -Fxq "$REPO_NAME" "$STARS_FILE"; then
