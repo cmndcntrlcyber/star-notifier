@@ -23,7 +23,17 @@ jobs:
           GH_USERNAME: ${{ vars.GH_USERNAME }}
         run: |
           set -e
-          
+
+          # Validate required environment variables
+          if [ -z "$GH_USERNAME" ]; then
+            echo "Error: GH_USERNAME is not set. Add it in Repository Settings → Variables."
+            exit 1
+          fi
+          if [ -z "$GH_TOKEN" ]; then
+            echo "Error: GH_TOKEN is not set. Add it in Repository Settings → Secrets."
+            exit 1
+          fi
+
           # Create data directory if needed
           mkdir -p data
           
