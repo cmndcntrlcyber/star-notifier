@@ -46,7 +46,6 @@ jobs:
             REPO_STARS=$(echo "$repo" | jq -r '.stargazers_count')
             STARRED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ") # or get from the list, if available
             OWNER_AVATAR=$(echo "$repo" | jq -r '.owner.avatar_url')
-  # ...
             
             # Check if we've already notified about this repo
             if grep -Fxq "$REPO_NAME" "$STARS_FILE"; then
