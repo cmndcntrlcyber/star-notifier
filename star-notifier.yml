@@ -1,0 +1,108 @@
+name: GitHub Stars to Discord
+
+on:
+  schedule:
+    # Runs every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  check-stars:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for new starred repos
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GITHUB_USERNAME: ${{ vars.GITHUB_USERNAME }}
+        run: |
+          set -e
+          
+          # Create data directory if needed
+          mkdir -p data
+          
+          # File to track known stars
+          STARS_FILE="data/known_stars.txt"
+          touch "$STARS_FILE"
+          
+          # Fetch current starred repos (up to 100 most recent)
+          echo "Fetching starred repos for $GITHUB_USERNAME..."
+          STARRED_REPOS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3.star+json" \
+            "https://api.github.com/users/$GITHUB_USERNAME/starred?per_page=100&sort=created&direction=desc")
+          
+          # Process each starred repo
+          echo "$STARRED_REPOS" | jq -c '.[]' | while read -r repo; do
+            REPO_NAME=$(echo "$repo" | jq -r '.repo.full_name')
+            REPO_URL=$(echo "$repo" | jq -r '.repo.html_url')
+            REPO_DESC=$(echo "$repo" | jq -r '.repo.description // "No description provided"')
+            REPO_LANG=$(echo "$repo" | jq -r '.repo.language // "Not specified"')
+            REPO_STARS=$(echo "$repo" | jq -r '.repo.stargazers_count')
+            STARRED_AT=$(echo "$repo" | jq -r '.starred_at')
+            OWNER_AVATAR=$(echo "$repo" | jq -r '.repo.owner.avatar_url')
+            
+            # Check if we've already notified about this repo
+            if grep -Fxq "$REPO_NAME" "$STARS_FILE"; then
+              continue
+            fi
+            
+            echo "New star found: $REPO_NAME"
+            
+            # Send Discord webhook
+            PAYLOAD=$(jq -n \
+              --arg name "$REPO_NAME" \
+              --arg url "$REPO_URL" \
+              --arg desc "$REPO_DESC" \
+              --arg lang "$REPO_LANG" \
+              --arg stars "$REPO_STARS" \
+              --arg time "$STARRED_AT" \
+              --arg avatar "$OWNER_AVATAR" \
+              '{
+                "embeds": [{
+                  "title": ("⭐ " + $name),
+                  "url": $url,
+                  "description": $desc,
+                  "color": 16766720,
+                  "thumbnail": {
+                    "url": $avatar
+                  },
+                  "fields": [
+                    {
+                      "name": "Language",
+                      "value": $lang,
+                      "inline": true
+                    },
+                    {
+                      "name": "Stars",
+                      "value": $stars,
+                      "inline": true
+                    }
+                  ],
+                  "timestamp": $time
+                }]
+              }')
+            
+            curl -s -H "Content-Type: application/json" \
+              -d "$PAYLOAD" \
+              "$DISCORD_WEBHOOK_URL"
+            
+            # Add to known stars
+            echo "$REPO_NAME" >> "$STARS_FILE"
+            
+            # Small delay to avoid rate limits
+            sleep 1
+          done
+
+      - name: Commit updated stars list
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/known_stars.txt
+          git diff --staged --quiet || git commit -m "Update known stars list"
+          git push

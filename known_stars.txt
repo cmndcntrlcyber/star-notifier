@@ -1,0 +1,5 @@
+# Add your existing starred repos here (one per line) to avoid duplicate notifications
+# Format: owner/repo
+# Example:
+# facebook/react
+# microsoft/vscode
