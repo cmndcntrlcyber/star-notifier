@@ -34,7 +34,7 @@ jobs:
           # Fetch current starred repos (up to 100 most recent)
           echo "Fetching starred repos for $GH_USERNAME..."
           STARRED_REPOS=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.GH.v3.star+json" \
+            -H "Accept: application/vnd.github.v3.star+json" \
             "https://api.github.com/users/$GH_USERNAME/starred?per_page=100&sort=created&direction=desc")
           
           # Process each starred repo
@@ -44,6 +44,7 @@ jobs:
             REPO_DESC=$(echo "$repo" | jq -r '.description // "No description provided"')
             REPO_LANG=$(echo "$repo" | jq -r '.language // "Not specified"')
             REPO_STARS=$(echo "$repo" | jq -r '.stargazers_count')
+            STARRED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ") # or get from the list, if available
             OWNER_AVATAR=$(echo "$repo" | jq -r '.owner.avatar_url')
             
             # Check if we've already notified about this repo
